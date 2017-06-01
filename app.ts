@@ -1,4 +1,8 @@
-import  {ui, Button, NavigationView, Page, ScrollView, Composite, TextInput, Widget, ImageView, Canvas} from 'tabris';
+import  {ui, Button, NavigationView, Page, ScrollView, Composite, Widget, ImageView, Canvas, Slider} from 'tabris';
+import {Send} from './Send';
+import {ServiceLayer} from './ServiceLayer';
+
+
 
 let imageCounter: number = 0;
 let font: string = 'bold' + ' ' + 'normal' + ' 24px ' + 'arial';
@@ -7,18 +11,38 @@ let imageQueue: boolean = false;
 let imageArray: Array<Composite> = [];
 let globalPicture = 0;
 
-class MainPage {
+function getFileContentAsBase64(path,callback){
+    window.resolveLocalFileSystemURL(path, gotFile, fail);
 
+    function fail(e) {
+        alert('Cannot found requested file');
+    }
+
+    function gotFile(fileEntry) {
+        fileEntry.file(function(file) {
+            var reader = new FileReader();
+            reader.onloadend = function(e) {
+                var content = this.result;
+                callback(content);
+            };
+            // The most important point, use the readAsDatURL Method from the file plugin
+            reader.readAsDataURL(file);
+        });
+    }
+}
+
+
+class editPage {
 
     navView: NavigationView;
-    mainPage: Page;
+    editPage: Page;
     scrollView: ScrollView;
 
     constructor() {
         this.navView = new NavigationView({
             left: 0, top: 0, right: 0, bottom: 0
         }).appendTo(ui.contentView);
-        this.mainPage = new Page({
+        this.editPage = new Page({
                 title: 'MichaelPic'
             }
         ).appendTo(this.navView);
@@ -27,21 +51,18 @@ class MainPage {
     }
 
     private createComponents() {
+       this.scrollView = new ScrollView({
+            left: 0, right: 0, top: 'prev() 0', bottom: 0,
+            direction: 'vertical',
+            background: '#00bcd4'
+        });
 
-
-    this.mainPage.append(new Composite({
-                  left: 0, top: 'prev() 0', bottom: 0, right: 0,
-              }).append(this.scrollView = new ScrollView({
-        left: 0, right: 0, top: 'prev() 0', bottom: 0,
-        direction: 'vertical',
-        background: '#00bcd4'
-    })));
 
         var topButton = new MainButtons(this.scrollView, this.navView);
         console.log(this.scrollView);
 
-        this.mainPage.append(topButton.buildButtons());
-
+        this.editPage.append(topButton.buildButtons());
+        this.editPage.append(this.scrollView);
 
 }
 
@@ -59,7 +80,7 @@ class Picture{
             if (imageQueue) {
         window.plugins.toast.showShortBottom('Image added');
         let imageComp = new Composite({
-            top: 'prev() 20', left: '5%', right: "5%"
+            top: 'prev() 25', left: '10%', right: "10%", height: 200
         }).appendTo(this.scroll);
         imageArray.push(imageComp);
 
@@ -68,14 +89,14 @@ class Picture{
         }).appendTo(imageComp);
 
          new ImageView({
-            top: 0, centerX: 0,
+            top: 0, left: 0, right: 0,
             image: {src: picPath[imageCounter]},
             background: '#aaaaaa',
-            scaleMode: 'fill'
+            scaleMode: 'auto'
         }).on('tap', function () {
              window.plugins.toast.showShortBottom('Image tapped');
              for (let i: number = 0; i < imageArray.length; i++) {
-                 imageArray[i].background = '#00bcd4'
+                 imageArray[i].background = '#00bcd4';
                  if(imageComp == imageArray[i]){
                      globalPicture = i;
                      console.log(i);
@@ -85,45 +106,123 @@ class Picture{
          }).appendTo(imageComp2);
         imageQueue = false;
         imageCounter = imageCounter + 1;
+
+                var path = picPath[0];
+
+// Convert image
+                getFileContentAsBase64(path,function(base64Image){
+                    //window.open(base64Image);
+                    console.log(base64Image);
+                    // Then you'll be able to handle the myimage.png file as base64
+                });
+
     }
     else {
         window.plugins.toast.showShortBottom('No image');
     }
     }
-
 }
 
 class customPage{
     pageTitle: string;
     appendLocation: NavigationView;
+
+
+
     constructor(title: string, page: NavigationView){
         this.pageTitle = title;
         this.appendLocation = page;
     }
 
+
+
     newPage(): void {
-    let mainPage = new Page({
+    let editPage = new Page({
         title: this.pageTitle
     }).appendTo(this.appendLocation);
 
-    var canvas = new Canvas({
+    let button: Button = new Button({
+        top: 10, right: 10,
+        text: 'Send'
+    }).on('select', function() {
+        console.log(red);
+       let collectionView =  new Send().createSendCollectionView();
+       let sendPage = new Page().append(collectionView);
+
+       editPage.parent().append(sendPage);
+        let search = new Send().createSearchBar(collectionView);
+        sendPage.parent().append(search);
+
+    }).appendTo(editPage);
+
+
+
+    let canvas = new Canvas({
             left: 0, top: 0, right: 0, bottom: 0,
         backgroundImage: {src: picPath[globalPicture]}
-    }).appendTo(mainPage);
+    }).appendTo(editPage);
 
-    var ctx = canvas.getContext('2d', 600, 600);
-    var x: number = 0;
-    var y: number = 0;
+
+        new Slider({
+            top: [button, 40],
+            right: 10,
+            left: 60,
+            minimum: 0,
+            selection: 0,
+            maximum: 1068,
+            transform: {
+                rotation: 0.5 * Math.PI,
+                scaleX: 1.0,
+                scaleY: 1.0,
+                translationX: 108,
+                translationY: 105
+
+            },
+
+        }).on('selectionChanged', function({value}) {
+            if(value<179){
+                green = 66 + value;
+            }else if(value<357 && value > 178){
+                red = 244 - value + 178;
+                green = 244;
+                blue = 66;
+
+            }else if(value<535 && value>356){
+                red = 66;
+                green = 244;
+                blue = 66 + value - 356
+            }else if(value<713 && value>534){
+                red = 66;
+                green = 244 - value + 534;
+                blue = 244
+            }else if(value<891 && value>712){
+                red = 66 + value - 712;
+                green = 66;
+                blue = 244
+            }else if(value<1069 && value>890){
+                red = 244;
+                green = 66;
+                blue = 244 - value - 890
+            }
+
+        }).appendTo(editPage);
+
+
+    let ctx = canvas.getContext('2d', 600, 600);
+    let x: number = 0;
+    let y: number = 0;
+    let red: number = 244;
+    let green: number = 66;
+    let blue: number = 66;
 
     canvas.on("touchStart", function(event) {
 
         x = event.touches[0].x;
         y = event.touches[0].y;
-        console.log('(' + x + ',' + y + ')    ');
         ctx.beginPath();
         ctx.moveTo(x,y);
         ctx.stroke();
-        ctx.strokeStyle = 'rgba(255, 0, 0, 1)';
+        ctx.strokeStyle = 'rgba(' + red.toString() + ',' + green.toString() + ',' + blue.toString() + ',1)';
         ctx.lineWidth = 5;
 
     }).on("touchMove", function(event){
@@ -131,7 +230,7 @@ class customPage{
         y = event.touches[0].y;
         ctx.lineTo(x, y);
         ctx.stroke();
-        ctx.strokeStyle = 'rgba(255, 0, 0, 1)';
+        ctx.strokeStyle = 'rgba(' + red.toString() + ',' + green.toString() + ',' + blue.toString() + ',1)';
         ctx.lineWidth = 5;
     });
 
@@ -198,28 +297,24 @@ class MainButtons{
 
 }
 
-
-
-
-
-new MainPage();
+new editPage();
 
 // var navigationView = new tabris.NavigationView({
 //     left: 0, top: 0, right: 0, bottom: 0
 // }).appendTo(tabris.ui.contentView);
 //
-// var mainPage = new tabris.Page({
+// var editPage = new tabris.Page({
 //     title: 'Camera Fun'
 // }).appendTo(navigationView);
 //
 // var cameraComposite = new tabris.Composite({
 //     left: 0, top: 0, bottom: '80%', right: 0,
 //     background: '#008ba3'
-// }).appendTo(mainPage);
+// }).appendTo(editPage);
 //
 // var scrollViewComposite = new tabris.Composite({
 //     left: 0, top: 'prev() 0', bottom: 0, right: 0,
-// }).appendTo(mainPage);
+// }).appendTo(editPage);
 //
 //
 // var scrollView = new tabris.ScrollView({

@@ -1,35 +1,52 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var tabris_1 = require("tabris");
+var Send_1 = require("./Send");
 var imageCounter = 0;
 var font = 'bold' + ' ' + 'normal' + ' 24px ' + 'arial';
 var picPath = [];
 var imageQueue = false;
 var imageArray = [];
 var globalPicture = 0;
-var MainPage = (function () {
-    function MainPage() {
+function getFileContentAsBase64(path, callback) {
+    window.resolveLocalFileSystemURL(path, gotFile, fail);
+    function fail(e) {
+        alert('Cannot found requested file');
+    }
+    function gotFile(fileEntry) {
+        fileEntry.file(function (file) {
+            var reader = new FileReader();
+            reader.onloadend = function (e) {
+                var content = this.result;
+                callback(content);
+            };
+            // The most important point, use the readAsDatURL Method from the file plugin
+            reader.readAsDataURL(file);
+        });
+    }
+}
+var editPage = (function () {
+    function editPage() {
         this.navView = new tabris_1.NavigationView({
             left: 0, top: 0, right: 0, bottom: 0
         }).appendTo(tabris_1.ui.contentView);
-        this.mainPage = new tabris_1.Page({
+        this.editPage = new tabris_1.Page({
             title: 'MichaelPic'
         }).appendTo(this.navView);
         this.createComponents();
     }
-    MainPage.prototype.createComponents = function () {
-        this.mainPage.append(new tabris_1.Composite({
-            left: 0, top: 'prev() 0', bottom: 0, right: 0,
-        }).append(this.scrollView = new tabris_1.ScrollView({
+    editPage.prototype.createComponents = function () {
+        this.scrollView = new tabris_1.ScrollView({
             left: 0, right: 0, top: 'prev() 0', bottom: 0,
             direction: 'vertical',
             background: '#00bcd4'
-        })));
+        });
         var topButton = new MainButtons(this.scrollView, this.navView);
         console.log(this.scrollView);
-        this.mainPage.append(topButton.buildButtons());
+        this.editPage.append(topButton.buildButtons());
+        this.editPage.append(this.scrollView);
     };
-    return MainPage;
+    return editPage;
 }());
 var Picture = (function () {
     function Picture(scrollInput) {
@@ -39,17 +56,17 @@ var Picture = (function () {
         if (imageQueue) {
             window.plugins.toast.showShortBottom('Image added');
             var imageComp_1 = new tabris_1.Composite({
-                top: 'prev() 20', left: '5%', right: "5%"
+                top: 'prev() 25', left: '10%', right: "10%", height: 200
             }).appendTo(this.scroll);
             imageArray.push(imageComp_1);
             var imageComp2 = new tabris_1.Composite({
                 top: 2, bottom: 2, left: 2, right: 2
             }).appendTo(imageComp_1);
             new tabris_1.ImageView({
-                top: 0, centerX: 0,
+                top: 0, left: 0, right: 0,
                 image: { src: picPath[imageCounter] },
                 background: '#aaaaaa',
-                scaleMode: 'fill'
+                scaleMode: 'auto'
             }).on('tap', function () {
                 window.plugins.toast.showShortBottom('Image tapped');
                 for (var i = 0; i < imageArray.length; i++) {
@@ -63,6 +80,13 @@ var Picture = (function () {
             }).appendTo(imageComp2);
             imageQueue = false;
             imageCounter = imageCounter + 1;
+            var path = picPath[0];
+            // Convert image
+            getFileContentAsBase64(path, function (base64Image) {
+                //window.open(base64Image);
+                console.log(base64Image);
+                // Then you'll be able to handle the myimage.png file as base64
+            });
         }
         else {
             window.plugins.toast.showShortBottom('No image');
@@ -76,31 +100,89 @@ var customPage = (function () {
         this.appendLocation = page;
     }
     customPage.prototype.newPage = function () {
-        var mainPage = new tabris_1.Page({
+        var editPage = new tabris_1.Page({
             title: this.pageTitle
         }).appendTo(this.appendLocation);
+        var button = new tabris_1.Button({
+            top: 10, right: 10,
+            text: 'Send'
+        }).on('select', function () {
+            console.log(red);
+            var collectionView = new Send_1.Send().createSendCollectionView();
+            var sendPage = new tabris_1.Page().append(collectionView);
+            editPage.parent().append(sendPage);
+            var search = new Send_1.Send().createSearchBar(collectionView);
+            sendPage.parent().append(search);
+        }).appendTo(editPage);
         var canvas = new tabris_1.Canvas({
             left: 0, top: 0, right: 0, bottom: 0,
             backgroundImage: { src: picPath[globalPicture] }
-        }).appendTo(mainPage);
+        }).appendTo(editPage);
+        new tabris_1.Slider({
+            top: [button, 40],
+            right: 10,
+            left: 60,
+            minimum: 0,
+            selection: 0,
+            maximum: 1068,
+            transform: {
+                rotation: 0.5 * Math.PI,
+                scaleX: 1.0,
+                scaleY: 1.0,
+                translationX: 108,
+                translationY: 105
+            },
+        }).on('selectionChanged', function (_a) {
+            var value = _a.value;
+            if (value < 179) {
+                green = 66 + value;
+            }
+            else if (value < 357 && value > 178) {
+                red = 244 - value + 178;
+                green = 244;
+                blue = 66;
+            }
+            else if (value < 535 && value > 356) {
+                red = 66;
+                green = 244;
+                blue = 66 + value - 356;
+            }
+            else if (value < 713 && value > 534) {
+                red = 66;
+                green = 244 - value + 534;
+                blue = 244;
+            }
+            else if (value < 891 && value > 712) {
+                red = 66 + value - 712;
+                green = 66;
+                blue = 244;
+            }
+            else if (value < 1069 && value > 890) {
+                red = 244;
+                green = 66;
+                blue = 244 - value - 890;
+            }
+        }).appendTo(editPage);
         var ctx = canvas.getContext('2d', 600, 600);
         var x = 0;
         var y = 0;
+        var red = 244;
+        var green = 66;
+        var blue = 66;
         canvas.on("touchStart", function (event) {
             x = event.touches[0].x;
             y = event.touches[0].y;
-            console.log('(' + x + ',' + y + ')    ');
             ctx.beginPath();
             ctx.moveTo(x, y);
             ctx.stroke();
-            ctx.strokeStyle = 'rgba(255, 0, 0, 1)';
+            ctx.strokeStyle = 'rgba(' + red.toString() + ',' + green.toString() + ',' + blue.toString() + ',1)';
             ctx.lineWidth = 5;
         }).on("touchMove", function (event) {
             x = event.touches[0].x;
             y = event.touches[0].y;
             ctx.lineTo(x, y);
             ctx.stroke();
-            ctx.strokeStyle = 'rgba(255, 0, 0, 1)';
+            ctx.strokeStyle = 'rgba(' + red.toString() + ',' + green.toString() + ',' + blue.toString() + ',1)';
             ctx.lineWidth = 5;
         });
     };
@@ -152,23 +234,23 @@ var MainButtons = (function () {
     };
     return MainButtons;
 }());
-new MainPage();
+new editPage();
 // var navigationView = new tabris.NavigationView({
 //     left: 0, top: 0, right: 0, bottom: 0
 // }).appendTo(tabris.ui.contentView);
 //
-// var mainPage = new tabris.Page({
+// var editPage = new tabris.Page({
 //     title: 'Camera Fun'
 // }).appendTo(navigationView);
 //
 // var cameraComposite = new tabris.Composite({
 //     left: 0, top: 0, bottom: '80%', right: 0,
 //     background: '#008ba3'
-// }).appendTo(mainPage);
+// }).appendTo(editPage);
 //
 // var scrollViewComposite = new tabris.Composite({
 //     left: 0, top: 'prev() 0', bottom: 0, right: 0,
-// }).appendTo(mainPage);
+// }).appendTo(editPage);
 //
 //
 // var scrollView = new tabris.ScrollView({
