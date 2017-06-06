@@ -16,16 +16,12 @@ var people = [
     return ({ name: name, image: IMAGE_PATH + image });
 });
 var cellArray = [];
-var sendButton = new tabris_1.Button({ text: 'Send',
-    centerY: 0,
-    centerX: 0
-});
 var Send = (function () {
     function Send() {
     }
     Send.prototype.createSendCollectionView = function () {
         var friendsCollectionView = new tabris_1.CollectionView({
-            left: 0, top: 0, right: 0, bottom: '90%',
+            left: 0, top: 0, right: 0, bottom: '10%',
             itemCount: people.length,
             cellHeight: 150,
             createCell: function () {
@@ -52,41 +48,45 @@ var Send = (function () {
             },
         }).on('select', function (_a) {
             var index = _a.index;
-            return sendButton.appendTo(friendsCollectionView);
+            return sendButton.opacity = 1;
         });
-        return friendsCollectionView;
+        var sendButtonComp = new tabris_1.Composite({
+            top: friendsCollectionView,
+            bottom: 0,
+            left: 0,
+            right: 0
+        });
+        var sendButton = new tabris_1.Button({ text: 'Send',
+            centerY: 0,
+            centerX: 0,
+            opacity: 1
+        });
+        sendButtonComp.append();
+        var page = new tabris_1.Page();
+        page.append(friendsCollectionView).append(sendButtonComp);
+        return page;
     };
-    Send.prototype.createSearchBar = function (collectionView) {
+    Send.prototype.createSendComposite = function () {
         var _this = this;
-        var action = new tabris_1.SearchAction({
-            title: 'Search',
-            image: {
-                src: tabris_1.device.platform === 'iOS' ? 'images/search-black-24dp@3x.png' : 'images/search.png',
-                scale: 1.5
-            }
-        }).on('select', function (_a) {
-            var target = _a.target;
-            return target.text = '';
-        }).on('input', function (_a) {
-            var text = _a.text;
-            return _this.updateCollectionView(text, collectionView);
-        });
-        return action;
-    };
-    Send.prototype.updateCollectionView = function (textInput, collectionView) {
-        // let cellIndexFound: Array<number> = [];
-        //
-        // for(let i= 0; i<people.length; i++) {
-        //     if (textInput == people[i].name) {
-        //         cellIndexFound.push(i);
-        //     }
-        // }
-        // for(let j= 0; j<people.length; j++) {
-        //    collectionView.remove(j);
-        // }
-        // for(let k = 0; k<cellIndexFound.length; k++){
-        //     collectionView.updateCell(cellArray[cellIndexFound[k]], k);
-        // }
+        createSearchBar(collectionView, tabris_1.CollectionView);
+        {
+            var action = new tabris_1.SearchAction({
+                title: 'Search',
+                image: {
+                    src: tabris_1.device.platform === 'iOS' ? 'images/search-black-24dp@3x.png' : 'images/search.png',
+                    scale: 1.5
+                }
+            }).on('select', function (_a) {
+                var target = _a.target;
+                return target.text = '';
+            }).on('input', function (_a) {
+                var text = _a.text;
+                return _this.updateCollectionView(text, collectionView);
+            });
+            return action;
+        }
+        updateCollectionView(textInput, string, collectionView, tabris_1.CollectionView);
+        void {};
     };
     return Send;
 }());

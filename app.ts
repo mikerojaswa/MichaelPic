@@ -10,26 +10,8 @@ let picPath: Array<string> = [];
 let imageQueue: boolean = false;
 let imageArray: Array<Composite> = [];
 let globalPicture = 0;
+let savedImage = [];
 
-function getFileContentAsBase64(path,callback){
-    window.resolveLocalFileSystemURL(path, gotFile, fail);
-
-    function fail(e) {
-        alert('Cannot found requested file');
-    }
-
-    function gotFile(fileEntry) {
-        fileEntry.file(function(file) {
-            var reader = new FileReader();
-            reader.onloadend = function(e) {
-                var content = this.result;
-                callback(content);
-            };
-            // The most important point, use the readAsDatURL Method from the file plugin
-            reader.readAsDataURL(file);
-        });
-    }
-}
 
 
 class editPage {
@@ -107,18 +89,9 @@ class Picture{
         imageQueue = false;
         imageCounter = imageCounter + 1;
 
-                var path = picPath[0];
-
-// Convert image
-                getFileContentAsBase64(path,function(base64Image){
-                    //window.open(base64Image);
-                    console.log(base64Image);
-                    // Then you'll be able to handle the myimage.png file as base64
-                });
-
     }
     else {
-        window.plugins.toast.showShortBottom('No image');
+                window.plugins.toast.showShortBottom('No pictor');
     }
     }
 }
@@ -137,6 +110,9 @@ class customPage{
 
 
     newPage(): void {
+
+
+
     let editPage = new Page({
         title: this.pageTitle
     }).appendTo(this.appendLocation);
@@ -145,13 +121,23 @@ class customPage{
         top: 10, right: 10,
         text: 'Send'
     }).on('select', function() {
-        console.log(red);
-       let collectionView =  new Send().createSendCollectionView();
-       let sendPage = new Page().append(collectionView);
+        //Send image to node server
+        let path = picPath[globalPicture];
+        let convertedImage = "";
+        let serviceLayer = new ServiceLayer();
 
-       editPage.parent().append(sendPage);
-        let search = new Send().createSearchBar(collectionView);
-        sendPage.parent().append(search);
+        serviceLayer.getFileContentAsBase64(path, function (base64Image) {
+            convertedImage = base64Image;
+            serviceLayer.saveImage(convertedImage);
+        });
+
+
+       let collectionView =  new Send().createSendCollectionView();
+
+
+       editPage.parent().append(collectionView);
+        // let search = new Send().createSearchBar(collectionView);
+        // sendPage.parent().append(search);
 
     }).appendTo(editPage);
 

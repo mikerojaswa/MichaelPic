@@ -8,4 +8,7 @@
     Michael Rojas
   </author>
   <plugin name="cordova-plugin-file"/>
+  <plugin name="cordova-plugin-camera"/>
+  <plugin name="cordova-plugin-x-toast"/>
+
 </widget>

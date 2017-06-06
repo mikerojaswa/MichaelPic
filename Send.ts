@@ -12,17 +12,14 @@ let people = [
 
 let cellArray: Array<Widget> = [];
 
-let sendButton = new Button({text: 'Send',
-    centerY: 0,
-    centerX: 0
-});
+
 
 export class Send{
 
-    createSendCollectionView(): CollectionView{
+    createSendCollectionView(): Page{
 
         let friendsCollectionView: CollectionView =  new CollectionView({
-            left: 0, top: 0, right: 0, bottom: '90%',
+            left: 0, top: 0, right: 0, bottom: '10%',
             itemCount: people.length,
             cellHeight: 150,
             createCell: () => {
@@ -54,15 +51,33 @@ export class Send{
 
             },
         }).on('select', ({index}) =>
-        sendButton.appendTo(friendsCollectionView)
+        sendButton.opacity = 1
         );
 
 
 
+        let sendButtonComp = new Composite({
+            top: friendsCollectionView,
+            bottom: 0,
+            left: 0,
+            right: 0
+        });
 
-        return friendsCollectionView;
+        let sendButton = new Button({text: 'Send',
+            centerY: 0,
+            centerX: 0,
+            opacity: 1
+        });
+
+        sendButtonComp.append();
+
+        let page = new Page();
+        page.append(friendsCollectionView).append(sendButtonComp);
+
+        return page;
     }
 
+    createSendComposite(): Composite{
 
     createSearchBar(collectionView: CollectionView){
         let action = new SearchAction({

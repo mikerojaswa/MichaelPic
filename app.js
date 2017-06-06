@@ -2,29 +2,14 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 var tabris_1 = require("tabris");
 var Send_1 = require("./Send");
+var ServiceLayer_1 = require("./ServiceLayer");
 var imageCounter = 0;
 var font = 'bold' + ' ' + 'normal' + ' 24px ' + 'arial';
 var picPath = [];
 var imageQueue = false;
 var imageArray = [];
 var globalPicture = 0;
-function getFileContentAsBase64(path, callback) {
-    window.resolveLocalFileSystemURL(path, gotFile, fail);
-    function fail(e) {
-        alert('Cannot found requested file');
-    }
-    function gotFile(fileEntry) {
-        fileEntry.file(function (file) {
-            var reader = new FileReader();
-            reader.onloadend = function (e) {
-                var content = this.result;
-                callback(content);
-            };
-            // The most important point, use the readAsDatURL Method from the file plugin
-            reader.readAsDataURL(file);
-        });
-    }
-}
+var savedImage = [];
 var editPage = (function () {
     function editPage() {
         this.navView = new tabris_1.NavigationView({
@@ -80,16 +65,9 @@ var Picture = (function () {
             }).appendTo(imageComp2);
             imageQueue = false;
             imageCounter = imageCounter + 1;
-            var path = picPath[0];
-            // Convert image
-            getFileContentAsBase64(path, function (base64Image) {
-                //window.open(base64Image);
-                console.log(base64Image);
-                // Then you'll be able to handle the myimage.png file as base64
-            });
         }
         else {
-            window.plugins.toast.showShortBottom('No image');
+            window.plugins.toast.showShortBottom('No pictor');
         }
     };
     return Picture;
@@ -107,12 +85,18 @@ var customPage = (function () {
             top: 10, right: 10,
             text: 'Send'
         }).on('select', function () {
-            console.log(red);
+            //Send image to node server
+            var path = picPath[globalPicture];
+            var convertedImage = "";
+            var serviceLayer = new ServiceLayer_1.ServiceLayer();
+            serviceLayer.getFileContentAsBase64(path, function (base64Image) {
+                convertedImage = base64Image;
+                serviceLayer.saveImage(convertedImage);
+            });
             var collectionView = new Send_1.Send().createSendCollectionView();
-            var sendPage = new tabris_1.Page().append(collectionView);
-            editPage.parent().append(sendPage);
-            var search = new Send_1.Send().createSearchBar(collectionView);
-            sendPage.parent().append(search);
+            editPage.parent().append(collectionView);
+            // let search = new Send().createSearchBar(collectionView);
+            // sendPage.parent().append(search);
         }).appendTo(editPage);
         var canvas = new tabris_1.Canvas({
             left: 0, top: 0, right: 0, bottom: 0,
